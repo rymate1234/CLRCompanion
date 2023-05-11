@@ -69,8 +69,7 @@ namespace CLRCompanion.Bot.Modules
             embed.WithTitle("Bots");
             foreach (var bot in bots)
             {
-                // truncate prompt to first sentence
-                var prompt = bot.Prompt[..bot.Prompt.IndexOf('.')];
+                var prompt = bot.TruncatedPrompt;
                 embed.AddField($"@{bot.Username} (`{bot.Id}`)", $"Prompt: {prompt}\nModel: {bot.Model}\nChance: {bot.Chance}\nLimit: {bot.Limit}");
             }
             await RespondAsync(embed: embed.Build(), ephemeral: true);
@@ -84,7 +83,7 @@ namespace CLRCompanion.Bot.Modules
             var embed = new EmbedBuilder();
             embed.WithTitle($"@{botEntity.Username} (`{botEntity.Id}`)");
             embed.AddField("Model", botEntity.Model);
-            embed.AddField("Prompt", botEntity.Prompt[..botEntity.Prompt.IndexOf('.')]);
+            embed.AddField("Prompt", botEntity.TruncatedPrompt);
             embed.AddField("Chance", botEntity.Chance);
             embed.AddField("Limit", botEntity.Limit);
             embed.AddField("Avatar URL", botEntity.AvatarUrl ?? "Not Set");

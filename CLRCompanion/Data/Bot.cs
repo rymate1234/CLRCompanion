@@ -11,6 +11,11 @@
         public int Limit { get; set; }
         public string? AvatarUrl { get; set; }
         public bool Default { get; set; }
+
+        public string TruncatedPrompt
+        {
+            get => Prompt.Length > 50 ? Prompt.Substring(0, 50) + "..." : Prompt;
+        }
     }
 }
     
