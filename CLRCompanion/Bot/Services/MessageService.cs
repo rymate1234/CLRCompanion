@@ -59,7 +59,7 @@ namespace CLRCompanion.Bot.Services
                 {
                     await HandleReply(arg, defaultBot);
                     return;
-                } 
+                }
 
                 // reply to the user with a message
                 await arg.Channel.SendMessageAsync("Hey, you'll want to ping one of the bots not me directly, use `/list` or `/ask`");
@@ -91,7 +91,7 @@ namespace CLRCompanion.Bot.Services
             bots = bots.OrderBy(b => Guid.NewGuid()).ToList();
 
             // get bot via random chance
-            var bot = bots.FirstOrDefault(b => b.Chance >= new Random().NextDouble());
+            var bot = bots.FirstOrDefault(b => b.Chance >= new Random().NextDouble() && arg.Author.Username != b.Username);
 
             // if there is no bot, return
             if (bot == null)
@@ -109,7 +109,7 @@ namespace CLRCompanion.Bot.Services
             {
                 await arg.Channel.TriggerTypingAsync();
                 disposable = arg.Channel.EnterTypingState();
-            } 
+            }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
