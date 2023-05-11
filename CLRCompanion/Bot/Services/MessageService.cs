@@ -12,63 +12,79 @@ using System;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace CLRCompanion.Bot.Services
 {
     public class MessageService
     {
         private readonly DiscordSocketClient _discord;
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IServiceProvider _services;
         private readonly OpenAIAPI _api;
         private SlugHelper helper = new SlugHelper();
 
         public MessageService(IServiceProvider services)
         {
-            _dbContext = services.GetRequiredService<ApplicationDbContext>();
             _discord = services.GetRequiredService<DiscordSocketClient>();
             _api = services.GetRequiredService<OpenAIAPI>();
+            _services = services;
         }
 
         public void Initialize()
         {
-            _discord.MessageReceived += MessageReceived;
+            _discord.MessageReceived += _discord_MessageReceived;
+        }
+
+        private Task _discord_MessageReceived(SocketMessage arg)
+        {
+            _ = Task.Run(async () =>
+            {
+                await MessageReceived(arg);
+            });
+
+            return Task.CompletedTask;
         }
 
         private async Task MessageReceived(SocketMessage arg)
         {
-            // ignore messages from the bot
-            if (arg.Author.Id == _discord.CurrentUser.Id && arg.Interaction?.Name != "ask")
+            List<Data.Bot> bots = new List<Data.Bot>();
+            using (var scope = _services.CreateScope())
             {
-                return;
-            }
 
-            // find all bots in the channel
-            var bots = await _dbContext.Bots.Where(b => b.ChannelId == arg.Channel.Id).ToListAsync();
-
-            // if there are no bots in the channel, return
-            if (bots.Count() == 0)
-            {
-                return;
-            }
-
-            var defaultBot = await _dbContext.Bots.FirstOrDefaultAsync(b => b.ChannelId == arg.Channel.Id && b.Default);
-
-            if (arg.MentionedUsers.Any(u => u.Id == _discord.CurrentUser.Id))
-            {
-                if (defaultBot != null)
+                var _dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                // ignore messages from the bot
+                if (arg.Author.Id == _discord.CurrentUser.Id && arg.Interaction?.Name != "ask")
                 {
-                    await HandleReply(arg, defaultBot);
                     return;
                 }
 
-                // reply to the user with a message
-                await arg.Channel.SendMessageAsync("Hey, you'll want to ping one of the bots not me directly, use `/list` or `/ask`");
-                return;
+                // find all bots in the channel
+                bots = await _dbContext.Bots.Where(b => b.ChannelId == arg.Channel.Id).ToListAsync();
+
+                // if there are no bots in the channel, return
+                if (bots.Count() == 0)
+                {
+                    return;
+                }
+
+                if (arg.MentionedUsers.Any(u => u.Id == _discord.CurrentUser.Id))
+                {
+                    var defaultBot = await _dbContext.Bots.FirstOrDefaultAsync(b => b.ChannelId == arg.Channel.Id && b.Default);
+
+                    if (defaultBot != null)
+                    {
+                        await HandleReply(arg, defaultBot);
+                        return;
+                    }
+
+                    // reply to the user with a message
+                    await arg.Channel.SendMessageAsync("Hey, you'll want to ping one of the bots not me directly, use `/list` or `/ask`");
+                    return;
+                }
             }
 
-
             // check the message for a bot ping starting with @ e.g. @bot
-            var botPing = bots.FirstOrDefault
+            var bot = bots.FirstOrDefault
             (
                 b => arg.CleanContent.Contains($"@{b.Username}")
                   || arg.MentionedUsers.Any(m => m.Username == b.Username)
@@ -76,16 +92,16 @@ namespace CLRCompanion.Bot.Services
             );
 
             // if there is no bot ping, return
-            if (botPing == null)
+            if (bot == null)
             {
-                await HandleChance(arg, bots);
-                return;
+                bot = HandleChance(arg, bots);
+                if (bot == null) return;
             }
 
-            await HandleReply(arg, botPing);
+            await HandleReply(arg, bot);
         }
 
-        private async Task HandleChance(SocketMessage arg, List<Data.Bot> bots)
+        private Data.Bot HandleChance(SocketMessage arg, List<Data.Bot> bots)
         {
             // randomise the array first
             bots = bots.OrderBy(b => Guid.NewGuid()).ToList();
@@ -93,13 +109,7 @@ namespace CLRCompanion.Bot.Services
             // get bot via random chance
             var bot = bots.FirstOrDefault(b => b.Chance >= new Random().NextDouble() && arg.Author.Username != b.Username);
 
-            // if there is no bot, return
-            if (bot == null)
-            {
-                return;
-            }
-
-            await HandleReply(arg, bot);
+            return bot;
         }
 
         private async Task<DiscordWebhookClient> GetWebhookAsync(IIntegrationChannel channel, Data.Bot bot)
@@ -113,8 +123,12 @@ namespace CLRCompanion.Bot.Services
             if (webhook == null)
             {
                 webhook = await channel.CreateWebhookAsync(bot.Username);
-                bot.WebhookId = webhook.Id;
-                await _dbContext.SaveChangesAsync();
+                using (var scope = _services.CreateScope())
+                {
+                    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    bot.WebhookId = webhook.Id;
+                    await dbContext.SaveChangesAsync();
+                }
             }
 
             return new DiscordWebhookClient(webhook);

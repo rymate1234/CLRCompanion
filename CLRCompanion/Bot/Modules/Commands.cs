@@ -45,6 +45,7 @@ namespace CLRCompanion.Bot.Modules
             bool defaultBot = false
         )
         {
+            await RespondAsync("Adding bot...", ephemeral: true);
             var bot = new Data.Bot
             {
                 ChannelId = Context.Channel.Id,
@@ -58,7 +59,7 @@ namespace CLRCompanion.Bot.Modules
             };
             DbContext.Bots.Add(bot);
             await DbContext.SaveChangesAsync();
-            await RespondAsync($"Added bot {username} to the database.", ephemeral: true);
+            await FollowupAsync($"Added bot {username} to the database.", ephemeral: true);
         }
 
         [SlashCommand("list", "List all bots in the channel.")]
@@ -124,6 +125,7 @@ namespace CLRCompanion.Bot.Modules
         )
         {
             var botId = int.Parse(bot);
+            await RespondAsync("Editing bot...", ephemeral: true);
             var botEntity = await DbContext.Bots.FirstAsync(b => b.Id == botId);
 
             if (username != null)
@@ -163,7 +165,7 @@ namespace CLRCompanion.Bot.Modules
 
             await DbContext.SaveChangesAsync();
 
-            await RespondAsync($"Edited bot {botEntity.Username}.", ephemeral: true);
+            await FollowupAsync($"Edited bot {botEntity.Username}.", ephemeral: true);
         }
 
         [SlashCommand("ask", "Ask a bot a question.")]

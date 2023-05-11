@@ -58,10 +58,7 @@ namespace CLRCompanion
             app.MapBlazorHub();
             app.MapFallbackToPage("/_Host");
 
-            new DiscordBot()
-            {
-                App = app
-            }.StartAsync();
+            new DiscordBot().StartAsync();
 
             app.Run();
         }

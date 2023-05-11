@@ -4,6 +4,7 @@ using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using OpenAI_API;
 using System.Threading.Channels;
@@ -13,9 +14,8 @@ namespace CLRCompanion.Bot
     public class DiscordBot
     {
         private readonly string? _token = Environment.GetEnvironmentVariable("DISCORD_BOT_TOKEN");
-        public WebApplication App { get; internal set; }
 
-        private ServiceProvider ConfigureServices(ApplicationDbContext database)
+        private ServiceProvider ConfigureServices()
         {
             return new ServiceCollection()
                 .AddSingleton(new DiscordSocketConfig
@@ -27,7 +27,10 @@ namespace CLRCompanion.Bot
                 .AddSingleton<InteractionHandlingService>()
                 .AddSingleton<MessageService>()
                 .AddSingleton<OpenAIAPI>()
-                .AddSingleton(database)
+                .AddDbContext<ApplicationDbContext>
+                (
+                    options => options.UseSqlite("Data Source=app.db")
+                )
                 .BuildServiceProvider();
         }
 
@@ -44,9 +47,7 @@ namespace CLRCompanion.Bot
         // initialise a discord bot
         public async void StartAsync()
         {
-            using var scope = App.Services.CreateScope();
-            var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            using var services = ConfigureServices(database);
+            using var services = ConfigureServices();
 
             var client = services.GetRequiredService<DiscordSocketClient>();
 
