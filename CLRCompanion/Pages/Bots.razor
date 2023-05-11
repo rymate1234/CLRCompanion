@@ -1,0 +1,80 @@
+﻿@page "/bots"
+
+<PageTitle>Bots</PageTitle>
+
+@using CLRCompanion.Data
+@inject ApplicationDbContext dbContext
+@inject NavigationManager NavigationManager
+
+<h1>Bots</h1>
+
+
+@if (ChannelId == null)
+{
+    <div>
+        <p>Enter a Channel ID</p>
+        <input type="text" @bind="ChannelId" @bind:after="ChannelIdChanged" />
+    </div>    
+}
+else if (bots == null)
+{
+    <p><em>Loading...</em></p>
+}   
+else if (bots?.Length == 0)
+{
+    <p><em>No bots found.</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Username</th>
+                <th>Prompt</th>
+                <th>Model</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var bot in bots)
+            {
+                <tr>
+                    <td>@bot.Id</td>
+                    <td>@bot.Username</td>
+                    <td>@bot.Prompt</td>
+                    <td>@bot.Model</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Bot[]? bots;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "channelId")]
+    public string? ChannelId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ChannelId == null) return;
+
+        ulong id = ulong.Parse(ChannelId!);
+        bots = dbContext.Bots.Where(b => b.ChannelId == id).ToArray();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ChannelId == null) return;
+
+        ulong id = ulong.Parse(ChannelId!);
+        bots = dbContext.Bots.Where(b => b.ChannelId == id).ToArray();
+    }
+
+    private async Task ChannelIdChanged()
+    {
+        if (ChannelId == null) return;
+        NavigationManager.NavigateTo($"bots?channelId={ChannelId}");
+    }
+}
