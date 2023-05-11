@@ -4,6 +4,7 @@
     {
         public int Id { get; set; }
         public ulong ChannelId { get; set; }
+        public ulong? WebhookId { get; set; }
         public string Username { get; set; }
         public string Prompt { get; set; }
         public string Model { get; set; }

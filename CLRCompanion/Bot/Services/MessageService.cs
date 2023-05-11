@@ -102,6 +102,24 @@ namespace CLRCompanion.Bot.Services
             await HandleReply(arg, bot);
         }
 
+        private async Task<DiscordWebhookClient> GetWebhookAsync(IIntegrationChannel channel, Data.Bot bot)
+        {
+            IWebhook webhook = null;
+            if (bot.WebhookId != null)
+            {
+                webhook = await channel.GetWebhookAsync(bot.WebhookId.Value);
+            }
+
+            if (webhook == null)
+            {
+                webhook = await channel.CreateWebhookAsync(bot.Username);
+                bot.WebhookId = webhook.Id;
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return new DiscordWebhookClient(webhook);
+        }
+
         private async Task HandleReply(SocketMessage arg, Data.Bot bot)
         {
             IDisposable disposable = null;
@@ -152,15 +170,13 @@ namespace CLRCompanion.Bot.Services
             var filteredMsg = msg.Contains("]:") ? msg.Substring(msg.IndexOf("]:") + 2) : msg;
 
             var channel = arg.Channel as IIntegrationChannel;
+
             if (channel != null)
             {
-                var webhook = await channel.CreateWebhookAsync(bot.Username);
-                var client = new DiscordWebhookClient(webhook);
+                var client = await GetWebhookAsync(channel, bot);
                 var url = _discord.CurrentUser.GetAvatarUrl();
 
-                await client.SendMessageAsync(filteredMsg, avatarUrl: bot.AvatarUrl ?? url);
-
-                await webhook.DeleteAsync();
+                await client.SendMessageAsync(filteredMsg, avatarUrl: bot.AvatarUrl ?? url, username: bot.Username);
             }
             else
             {
