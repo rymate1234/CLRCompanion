@@ -120,7 +120,9 @@ namespace CLRCompanion.Bot.Services
             var messages = await arg.Channel.GetMessagesAsync(bot.Limit).FlattenAsync();
 
             // rid the messages of the bot's messages including "I'm sorry" or "as an AI language model"
-            var filtered = messages.Where(m => !m.Author.IsBot && !m.Content.Contains("I'm sorry") && !m.Content.Contains("as an AI language model"));
+            var filtered = messages
+                .Where(m => !m.Author.IsBot && !m.Content.Contains("I'm sorry") && !m.Content.Contains("as an AI language model"))
+                .Reverse();
 
             var chatMessages = new List<ChatMessage>();
 
@@ -134,15 +136,20 @@ namespace CLRCompanion.Bot.Services
                 var isBot = message.Author.Username == bot.Username && (message.Author.IsBot || message.Author.IsWebhook);
                 var role = isBot ? ChatMessageRole.Assistant : ChatMessageRole.User;
                 var userSlug = helper.GenerateSlug(message.Author.Username);
+                // format the message with a timestamp and the message content
                 chatMessages.Add(new ChatMessage()
                 {
                     Role = role,
-                    Content = message.Content,
+                    Content = $"[{DateTime.UtcNow}]: {message.CleanContent}",
                     Name = userSlug
                 });
             }
 
             var response = await _api.Chat.CreateChatCompletionAsync(chatMessages, bot.Model);
+
+            // filter out any initial timestamp from the response
+            var msg = response.ToString();
+            var filteredMsg = msg.Contains("]:") ? msg.Substring(msg.IndexOf("]:") + 2) : msg;
 
             var channel = arg.Channel as IIntegrationChannel;
             if (channel != null)
@@ -151,13 +158,13 @@ namespace CLRCompanion.Bot.Services
                 var client = new DiscordWebhookClient(webhook);
                 var url = _discord.CurrentUser.GetAvatarUrl();
 
-                await client.SendMessageAsync(response.ToString(), avatarUrl: bot.AvatarUrl ?? url);
+                await client.SendMessageAsync(filteredMsg, avatarUrl: bot.AvatarUrl ?? url);
 
                 await webhook.DeleteAsync();
             }
             else
             {
-                await arg.Channel.SendMessageAsync(response.ToString());
+                await arg.Channel.SendMessageAsync(filteredMsg);
             }
 
             disposable.Dispose();
