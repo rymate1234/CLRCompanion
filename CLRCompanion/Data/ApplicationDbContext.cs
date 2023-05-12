@@ -7,6 +7,7 @@ namespace CLRCompanion.Data
     public class ApplicationDbContext : IdentityDbContext
     {
         public DbSet<Bot> Bots { get; set; }
+        public DbSet<Channel> Channels { get; set; }
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
