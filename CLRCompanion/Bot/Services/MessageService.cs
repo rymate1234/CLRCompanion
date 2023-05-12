@@ -39,7 +39,20 @@ namespace CLRCompanion.Bot.Services
         {
             _ = Task.Run(async () =>
             {
-                await MessageReceived(arg);
+                IDisposable? disposable = null;
+                try
+                {
+                    await arg.Channel.TriggerTypingAsync();
+                    disposable = arg.Channel.EnterTypingState();
+
+                    await MessageReceived(arg);
+                } catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    disposable?.Dispose();
+                    return;
+                }
+                disposable?.Dispose();
             });
 
             return Task.CompletedTask;
@@ -136,19 +149,6 @@ namespace CLRCompanion.Bot.Services
 
         private async Task HandleReply(SocketMessage arg, Data.Bot bot)
         {
-            IDisposable disposable = null;
-            try
-            {
-                await arg.Channel.TriggerTypingAsync();
-                disposable = arg.Channel.EnterTypingState();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                disposable?.Dispose();
-                return;
-            }
-
             var messages = await arg.Channel.GetMessagesAsync(bot.Limit).FlattenAsync();
 
             // rid the messages of the bot's messages including "I'm sorry" or "as an AI language model"
