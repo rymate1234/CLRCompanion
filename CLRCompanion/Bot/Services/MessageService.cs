@@ -27,8 +27,8 @@ namespace CLRCompanion.Bot.Services
         private string prompt = @"
 You are a discord bot designed to perform different prompts. The following will contain:
  - the prompt -- you should follow this as much as possible
- - at least one message from the channel
-Please write a suitable reply
+ - at least one message from the channel, in the format [timestamp] <username>: message
+Please write a suitable reply, only replying with the message
 
 The prompt is as follows:";
 
@@ -209,7 +209,7 @@ The prompt is as follows:";
 
             // filter out any initial timestamp from the response
             var msg = response.ToString();
-            var filteredMsg = msg.Contains("]:") ? msg.Substring(msg.IndexOf("]:") + 2) : msg;
+            var filteredMsg = msg.Contains("> ") ? msg.Substring(msg.IndexOf("> ") + 2) : msg;
 
             var channel = arg.Channel as IIntegrationChannel;
 
