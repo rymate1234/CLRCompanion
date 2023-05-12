@@ -24,6 +24,14 @@ namespace CLRCompanion.Bot.Services
         private readonly OpenAIAPI _api;
         private SlugHelper helper = new SlugHelper();
 
+        private string prompt = @"
+You are a discord bot designed to perform different prompts. The following will contain:
+ - the prompt -- you should follow this as much as possible
+ - at least one message from the channel
+Please write a suitable reply
+
+The prompt is as follows:";
+
         public MessageService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
@@ -170,7 +178,7 @@ namespace CLRCompanion.Bot.Services
 
             if (bot.Prompt != "")
             {
-                chatMessages.Add(new ChatMessage(ChatMessageRole.User, bot.Prompt));
+                chatMessages.Add(new ChatMessage(ChatMessageRole.System, prompt + "\n\n" + bot.Prompt));
             }
 
             foreach (var message in filtered)
@@ -178,13 +186,23 @@ namespace CLRCompanion.Bot.Services
                 var isBot = message.Author.Username == bot.Username && (message.Author.IsBot || message.Author.IsWebhook);
                 var role = isBot ? ChatMessageRole.Assistant : ChatMessageRole.User;
                 var userSlug = helper.GenerateSlug(message.Author.Username);
-                // format the message with a timestamp and the message content
-                chatMessages.Add(new ChatMessage()
+                var lastMessage = chatMessages.LastOrDefault();
+
+                var messageText = isBot ? message.CleanContent : $"[{DateTime.UtcNow}] <{message.Author.Username}> {message.CleanContent}";
+
+                if (lastMessage != null && lastMessage.Role == ChatMessageRole.User && role == ChatMessageRole.User)
                 {
-                    Role = role,
-                    Content = $"[{DateTime.UtcNow}]: {message.CleanContent}",
-                    Name = userSlug
-                });
+                    lastMessage.Content += $"\n{messageText}";
+                }
+                else
+                {
+                    chatMessages.Add(new ChatMessage()
+                    {
+                        Role = role,
+                        Content = messageText,
+                        Name = userSlug
+                    });
+                }
             }
 
             var response = await _api.Chat.CreateChatCompletionAsync(chatMessages, bot.Model);
