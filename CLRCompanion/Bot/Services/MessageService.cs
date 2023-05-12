@@ -114,7 +114,7 @@ namespace CLRCompanion.Bot.Services
             await HandleReply(arg, bot);
         }
 
-        private Data.Bot HandleChance(SocketMessage arg, List<Data.Bot> bots)
+        private Data.Bot? HandleChance(SocketMessage arg, List<Data.Bot> bots)
         {
             // randomise the array first
             bots = bots.OrderBy(b => Guid.NewGuid()).ToList();
@@ -196,8 +196,6 @@ namespace CLRCompanion.Bot.Services
             {
                 await arg.Channel.SendMessageAsync(filteredMsg);
             }
-
-            disposable.Dispose();
         }
     }
 }
