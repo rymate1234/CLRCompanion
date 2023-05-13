@@ -171,8 +171,16 @@ The prompt is as follows:";
 
             // rid the messages of the bot's messages including "I'm sorry" or "as an AI language model"
             var filtered = messages
-                .Where(m => !m.Author.IsBot && !m.Content.Contains("I'm sorry") && !m.Content.Contains("as an AI language model"))
+                .Where(m => !m.Author.IsBot || (m.Author.IsBot && !m.Content.Contains("I'm sorry") && !m.Content.Contains("as an AI language model")))
                 .Reverse();
+
+            var previousMessage = filtered.LastOrDefault();
+
+            if (arg.Id != previousMessage?.Id)
+            {
+                Console.WriteLine("Message not found");
+                filtered = filtered.Append(arg);
+            }
 
             var chatMessages = new List<ChatMessage>();
 
