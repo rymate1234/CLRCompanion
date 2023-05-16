@@ -102,9 +102,10 @@ The prompt is as follows:";
             // check the message for a bot ping starting with @ e.g. @bot
             var bot = bots.FirstOrDefault
             (
-                b => arg.CleanContent.Contains($"@{b.Username}")
+                b => (arg.CleanContent.Contains($"@{b.Username}")
                   || arg.MentionedUsers.Any(m => m.Username == b.Username)
-                  || arg is SocketUserMessage message && ((SocketUserMessage)arg).ReferencedMessage?.Author.Username == b.Username
+                  || arg is SocketUserMessage message && ((SocketUserMessage)arg).ReferencedMessage?.Author.Username == b.Username)
+                  && !b.IgnorePings
             );
 
             // if there is no bot ping, return
@@ -197,7 +198,7 @@ The prompt is as follows:";
                 var userSlug = helper.GenerateSlug(message.Author.Username);
                 var lastMessage = chatMessages.LastOrDefault();
 
-                var messageText = isBot ? message.CleanContent : $"[{DateTime.UtcNow}] <{message.Author.Username}> {message.CleanContent}";
+                var messageText = isBot ? message.CleanContent : $"[{message.Timestamp.DateTime}] <{message.Author.Username}> {message.CleanContent}";
 
                 foreach (var attachment in message.Attachments)
                 {

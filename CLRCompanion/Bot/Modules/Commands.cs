@@ -42,7 +42,8 @@ namespace CLRCompanion.Bot.Modules
             double chance = 0.01,
             int limit = 5,
             string? avatarUrl = null,
-            bool defaultBot = false
+            bool defaultBot = false,
+            bool ignorePings = false
         )
         {
             await RespondAsync("Adding bot...", ephemeral: true);
@@ -55,7 +56,8 @@ namespace CLRCompanion.Bot.Modules
                 Chance = chance,
                 Limit = limit,
                 AvatarUrl = avatarUrl,
-                Default = defaultBot
+                Default = defaultBot,
+                IgnorePings = ignorePings
             };
             DbContext.Bots.Add(bot);
             await DbContext.SaveChangesAsync();
@@ -89,6 +91,7 @@ namespace CLRCompanion.Bot.Modules
             embed.AddField("Limit", botEntity.Limit);
             embed.AddField("Avatar URL", botEntity.AvatarUrl ?? "Not Set");
             embed.AddField("Default", botEntity.Default);
+            embed.AddField("Ignore Pings", botEntity.IgnorePings);
             await RespondAsync(embed: embed.Build(), ephemeral: true);
         }
 
@@ -121,7 +124,8 @@ namespace CLRCompanion.Bot.Modules
             double? chance = null,
             int? limit = null,
             string? avatarUrl = null,
-            bool? defaultBot = null
+            bool? defaultBot = null,
+            bool? ignorePings = null
         )
         {
             var botId = int.Parse(bot);
@@ -161,6 +165,11 @@ namespace CLRCompanion.Bot.Modules
             if (defaultBot != null)
             {
                 botEntity.Default = defaultBot.Value;
+            }
+
+            if (ignorePings != null)
+            {
+                botEntity.IgnorePings = ignorePings.Value;
             }
 
             await DbContext.SaveChangesAsync();

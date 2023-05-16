@@ -11,6 +11,7 @@
         public int Limit { get; set; }
         public string? AvatarUrl { get; set; }
         public bool Default { get; set; }
+        public bool IgnorePings { get; set; }
 
         public string TruncatedPrompt
         {
