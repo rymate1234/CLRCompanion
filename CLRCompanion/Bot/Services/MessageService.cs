@@ -168,6 +168,8 @@ The prompt is as follows:";
             await arg.Channel.TriggerTypingAsync();
             using var disposable = arg.Channel.EnterTypingState();
 
+            await Task.Delay(500);
+
             var messages = await arg.Channel.GetMessagesAsync(bot.Limit).FlattenAsync();
 
             // rid the messages of the bot's messages including "I'm sorry" or "as an AI language model"
