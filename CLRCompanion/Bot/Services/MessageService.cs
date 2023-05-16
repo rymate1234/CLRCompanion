@@ -28,6 +28,7 @@ namespace CLRCompanion.Bot.Services
 You are a discord bot designed to perform different prompts. The following will contain:
  - the prompt -- you should follow this as much as possible
  - at least one message from the channel, in the format [timestamp] <username>: message
+ - If a message has embeds or attachments, they will be included in the prompt as well under the message as [embed] or [attachment]
 Please write a suitable reply, only replying with the message
 
 The prompt is as follows:";
@@ -197,6 +198,16 @@ The prompt is as follows:";
                 var lastMessage = chatMessages.LastOrDefault();
 
                 var messageText = isBot ? message.CleanContent : $"[{DateTime.UtcNow}] <{message.Author.Username}> {message.CleanContent}";
+
+                foreach (var attachment in message.Attachments)
+                {
+                    messageText += $"\n[attachment] {attachment.Url} {attachment.Description}";
+                }
+
+                foreach(var embed in message.Embeds)
+                {
+                    messageText += $"\n[embed] {embed.Url} {embed.Title} {embed.Description}";
+                }
 
                 if (lastMessage != null && lastMessage.Role == ChatMessageRole.User && role == ChatMessageRole.User)
                 {
