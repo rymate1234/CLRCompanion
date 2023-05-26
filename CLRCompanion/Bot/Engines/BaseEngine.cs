@@ -44,7 +44,6 @@ namespace CLRCompanion.Bot.Engines
 
                 filtered = filtered.Where(m =>
                 {
-                    Console.WriteLine($"Opt out -- Checking {m.Author.Username} ({m.Author.Id}) is in {string.Join(", ", optOut)}");
                     return !optOut.Contains(m.Author.Id);
                 });
 
@@ -56,7 +55,6 @@ namespace CLRCompanion.Bot.Engines
 
                 filtered = filtered.Where(m =>
                 {
-                    Console.WriteLine($"Ping only -- Checking {m.Author.Username} ({m.Author.Id}) is in {string.Join(", ", pingOnly)}");
                     return !pingOnly.Contains(m.Author.Id) || bot.DidMention(m);
                 });
             }

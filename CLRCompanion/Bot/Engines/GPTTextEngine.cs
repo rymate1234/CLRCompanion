@@ -54,7 +54,7 @@ namespace CLRCompanion.Bot.Engines
             else
             {
                 var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                chatMessages += $"[{timestamp}] <{bot.Username}> ";
+                chatMessages += $"[{timestamp}] <{bot.Username}>";
             }
 
             var stopSequence = "\n[";
