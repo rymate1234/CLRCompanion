@@ -1,4 +1,5 @@
-﻿using CLRCompanion.Bot.Services;
+﻿using CLRCompanion.Bot.Engines;
+using CLRCompanion.Bot.Services;
 using CLRCompanion.Data;
 using Discord;
 using Discord.Commands;
@@ -27,6 +28,8 @@ namespace CLRCompanion.Bot
                 .AddSingleton<InteractionHandlingService>()
                 .AddSingleton<MessageService>()
                 .AddSingleton<OpenAIAPI>()
+                .AddSingleton<GPTChatEngine>()
+                .AddSingleton<GPTTextEngine>()
                 .AddDbContext<ApplicationDbContext>
                 (
                     options => options.UseSqlite("Data Source=app.db")

@@ -27,11 +27,9 @@ namespace CLRCompanion.Bot.Modules
     }
 
 
-    public class Commands : InteractionModuleBase<SocketInteractionContext>
+    public class BotCommands : InteractionModuleBase<SocketInteractionContext>
     {
         public ApplicationDbContext DbContext { get; set; }
-        [SlashCommand("ping", "Replies with pong!")]
-        public Task PingAsync() => RespondAsync("pong!");
 
         [SlashCommand("add", "Adds a bot to the database.")]
         public async Task AddAsync
@@ -39,11 +37,14 @@ namespace CLRCompanion.Bot.Modules
             string username,
             string prompt = "When spoken to, it will always deny the users request and tell the user they should configure the prompt",
             string model = "gpt-3.5-turbo",
+            ModelType type = ModelType.GPTChat,
             double chance = 0.01,
             int limit = 5,
             string? avatarUrl = null,
             bool defaultBot = false,
-            bool ignorePings = false
+            bool ignorePings = false,
+            string? stopToken = null,
+            string? promptSuffix = null
         )
         {
             await RespondAsync("Adding bot...", ephemeral: true);
@@ -53,11 +54,14 @@ namespace CLRCompanion.Bot.Modules
                 Username = username,
                 Prompt = prompt,
                 Model = model,
+                ModelType = type,
                 Chance = chance,
                 Limit = limit,
                 AvatarUrl = avatarUrl,
                 Default = defaultBot,
-                IgnorePings = ignorePings
+                IgnorePings = ignorePings,
+                StopToken = stopToken,
+                PromptSuffix = promptSuffix
             };
             DbContext.Bots.Add(bot);
             await DbContext.SaveChangesAsync();
@@ -86,12 +90,15 @@ namespace CLRCompanion.Bot.Modules
             var embed = new EmbedBuilder();
             embed.WithTitle($"@{botEntity.Username} (`{botEntity.Id}`)");
             embed.AddField("Model", botEntity.Model);
+            embed.AddField("Model Type", botEntity.ModelType);
             embed.AddField("Prompt", botEntity.TruncatedPrompt);
             embed.AddField("Chance", botEntity.Chance);
             embed.AddField("Limit", botEntity.Limit);
             embed.AddField("Avatar URL", botEntity.AvatarUrl ?? "Not Set");
             embed.AddField("Default", botEntity.Default);
             embed.AddField("Ignore Pings", botEntity.IgnorePings);
+            embed.AddField("Stop Token", botEntity.StopToken ?? "Not Set");
+            embed.AddField("Prompt Suffix", botEntity.PromptSuffix ?? "Not Set");
             await RespondAsync(embed: embed.Build(), ephemeral: true);
         }
 
@@ -121,11 +128,14 @@ namespace CLRCompanion.Bot.Modules
             string? username = null,
             string? prompt = null,
             string? model = null,
+            ModelType? type = null,
             double? chance = null,
             int? limit = null,
             string? avatarUrl = null,
             bool? defaultBot = null,
-            bool? ignorePings = null
+            bool? ignorePings = null,
+            string? stopToken = null,
+            string? promptSuffix = null
         )
         {
             var botId = int.Parse(bot);
@@ -145,6 +155,11 @@ namespace CLRCompanion.Bot.Modules
             if (model != null)
             {
                 botEntity.Model = model;
+            }
+
+            if (type != null)
+            {
+                botEntity.ModelType = type.Value;
             }
 
             if (chance != null)
@@ -170,6 +185,16 @@ namespace CLRCompanion.Bot.Modules
             if (ignorePings != null)
             {
                 botEntity.IgnorePings = ignorePings.Value;
+            }
+
+            if (stopToken != null)
+            {
+                botEntity.StopToken = stopToken;
+            }
+
+            if (promptSuffix != null)
+            {
+                botEntity.PromptSuffix = promptSuffix;
             }
 
             await DbContext.SaveChangesAsync();

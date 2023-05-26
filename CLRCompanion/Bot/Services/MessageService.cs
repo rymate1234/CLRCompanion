@@ -1,19 +1,10 @@
-﻿using CLRCompanion.Data;
+﻿using CLRCompanion.Bot.Engines;
+using CLRCompanion.Data;
 using Discord;
-using Discord.Commands;
 using Discord.Webhook;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using OpenAI_API;
-using OpenAI_API.Chat;
-using Slugify;
 using System;
-using System.Globalization;
-using System.Reactive.Disposables;
-using System.Reflection;
-using System.Text;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace CLRCompanion.Bot.Services
 {
@@ -21,22 +12,10 @@ namespace CLRCompanion.Bot.Services
     {
         private readonly DiscordSocketClient _discord;
         private readonly IServiceProvider _services;
-        private readonly OpenAIAPI _api;
-        private SlugHelper helper = new SlugHelper();
-
-        private string prompt = @"
-You are a discord bot designed to perform different prompts. The following will contain:
- - the prompt -- you should follow this as much as possible
- - at least one message from the channel, in the format [timestamp] <username>: message
- - If a message has embeds or attachments, they will be included in the prompt as well under the message as [embed] or [attachment]
-Please write a suitable reply, only replying with the message
-
-The prompt is as follows:";
 
         public MessageService(IServiceProvider services)
         {
             _discord = services.GetRequiredService<DiscordSocketClient>();
-            _api = services.GetRequiredService<OpenAIAPI>();
             _services = services;
         }
 
@@ -52,7 +31,8 @@ The prompt is as follows:";
                 try
                 {
                     await MessageReceived(arg);
-                } catch (Exception ex)
+                }
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex);
                 }
@@ -102,10 +82,7 @@ The prompt is as follows:";
             // check the message for a bot ping starting with @ e.g. @bot
             var bot = bots.FirstOrDefault
             (
-                b => (arg.CleanContent.Contains($"@{b.Username}")
-                  || arg.MentionedUsers.Any(m => m.Username == b.Username)
-                  || arg is SocketUserMessage message && ((SocketUserMessage)arg).ReferencedMessage?.Author.Username == b.Username)
-                  && !b.IgnorePings
+                b => b.DidMention(arg) && !b.IgnorePings
             );
 
             // if there is no bot ping, return
@@ -164,6 +141,20 @@ The prompt is as follows:";
             return new DiscordWebhookClient(webhook);
         }
 
+        public BaseEngine GetEngine(ModelType type)
+        {
+            using var scope = _services.CreateScope();
+            switch (type)
+            {
+                case ModelType.GPTText:
+                    return scope.ServiceProvider.GetRequiredService<GPTTextEngine>();
+                case ModelType.GPTChat:
+                    return scope.ServiceProvider.GetRequiredService<GPTChatEngine>();
+                default:
+                    throw new ArgumentException("Invalid type", "type");
+            }
+        }
+
         private async Task HandleReply(SocketMessage arg, Data.Bot bot)
         {
             await arg.Channel.TriggerTypingAsync();
@@ -171,67 +162,9 @@ The prompt is as follows:";
 
             await Task.Delay(500);
 
-            var messages = await arg.Channel.GetMessagesAsync(bot.Limit).FlattenAsync();
+            var engine = GetEngine(bot.ModelType);
 
-            // rid the messages of the bot's messages including "I'm sorry" or "as an AI language model"
-            var filtered = messages
-                .Where(m => !m.Author.IsBot || (m.Author.IsBot && !m.Content.Contains("I'm sorry") && !m.Content.Contains("as an AI language model")))
-                .Reverse();
-
-            var previousMessage = filtered.LastOrDefault();
-
-            if (arg.Id != previousMessage?.Id)
-            {
-                Console.WriteLine("Message not found");
-                filtered = filtered.Append(arg);
-            }
-
-            var chatMessages = new List<ChatMessage>();
-
-            if (bot.Prompt != "")
-            {
-                chatMessages.Add(new ChatMessage(ChatMessageRole.System, prompt + "\n\n" + bot.Prompt));
-            }
-
-            foreach (var message in filtered)
-            {
-                var isBot = message.Author.Username == bot.Username && (message.Author.IsBot || message.Author.IsWebhook);
-                var role = isBot ? ChatMessageRole.Assistant : ChatMessageRole.User;
-                var userSlug = helper.GenerateSlug(message.Author.Username);
-                var lastMessage = chatMessages.LastOrDefault();
-
-                var messageText = isBot ? message.CleanContent : $"[{message.Timestamp.DateTime}] <{message.Author.Username}> {message.CleanContent}";
-
-                foreach (var attachment in message.Attachments)
-                {
-                    messageText += $"\n[attachment] {attachment.Url} {attachment.Description}";
-                }
-
-                foreach(var embed in message.Embeds)
-                {
-                    messageText += $"\n[embed] {embed.Url} {embed.Title} {embed.Description}";
-                }
-
-                if (lastMessage != null && lastMessage.Role == ChatMessageRole.User && role == ChatMessageRole.User)
-                {
-                    lastMessage.Content += $"\n{messageText}";
-                }
-                else
-                {
-                    chatMessages.Add(new ChatMessage()
-                    {
-                        Role = role,
-                        Content = messageText,
-                        Name = userSlug
-                    });
-                }
-            }
-
-            var response = await _api.Chat.CreateChatCompletionAsync(chatMessages, bot.Model);
-
-            // filter out any initial timestamp from the response
-            var msg = response.ToString();
-            var filteredMsg = msg.Contains("> ") ? msg.Substring(msg.IndexOf("> ") + 2) : msg;
+            var filteredMsg = await engine.GetResponse(arg, bot);
 
             var channel = arg.Channel as IIntegrationChannel;
 

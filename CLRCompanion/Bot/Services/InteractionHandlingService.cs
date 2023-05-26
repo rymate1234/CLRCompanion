@@ -32,13 +32,17 @@ namespace CLRCompanion.Bot.Services
             if (Program.IsDebug() && _server != null)
                 await _service.RegisterCommandsToGuildAsync(ulong.Parse(_server), true);
             else
-                await _service.RegisterCommandsGloballyAsync(true);
+            {
+                var res = await _service.RegisterCommandsGloballyAsync(true);
+                Console.WriteLine(res);
+            }
         }
 
         // Register all modules, and add the commands from these modules to either guild or globally depending on the build state.
         public async Task InitializeAsync()
         {
-            await _service.AddModuleAsync(typeof(Commands), _provider);
+            await _service.AddModuleAsync(typeof(BotCommands), _provider);
+            await _service.AddModuleAsync(typeof(UserCommands), _provider);
         }
 
         private async Task OnInteractionAsync(SocketInteraction interaction)
