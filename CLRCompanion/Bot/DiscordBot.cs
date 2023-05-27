@@ -30,6 +30,7 @@ namespace CLRCompanion.Bot
                 .AddSingleton<OpenAIAPI>()
                 .AddSingleton<GPTChatEngine>()
                 .AddSingleton<GPTTextEngine>()
+                .AddSingleton<EndpointEngine>()
                 .AddDbContext<ApplicationDbContext>
                 (
                     options => options.UseSqlite("Data Source=app.db")

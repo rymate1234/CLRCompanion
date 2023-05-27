@@ -9,7 +9,7 @@ using Slugify;
 
 namespace CLRCompanion.Bot.Engines
 {
-    public class GPTTextEngine : BaseEngine
+    public class GPTTextEngine : TextEngine
     {
         private readonly OpenAIAPI _api;
 
@@ -20,42 +20,7 @@ namespace CLRCompanion.Bot.Engines
 
         public override async Task<string> GetResponse(SocketMessage arg, Data.Bot bot)
         {
-            var messages = await GetMessages(arg, bot);
-
-            var chatMessages = "";
-
-            if (bot.Prompt != "" && bot.Prompt != null)
-            {
-                chatMessages += bot.Prompt + "\n";
-            }
-
-            foreach (var message in messages)
-            {
-                var timestamp = message.Timestamp.DateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                chatMessages += $"[{timestamp}] <{message.Author.Username}> {message.CleanContent}";
-
-                foreach (var attachment in message.Attachments)
-                {
-                    chatMessages += $"\n[attachment] {attachment.Url} {attachment.Description}";
-                }
-
-                foreach (var embed in message.Embeds)
-                {
-                    chatMessages += $"\n[embed] {embed.Url} {embed.Title} {embed.Description}";
-                }
-
-                chatMessages += "\n";
-            }
-
-            if (bot.PromptSuffix != "" && bot.PromptSuffix != null)
-            {
-                chatMessages += bot.PromptSuffix;
-            }
-            else
-            {
-                var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                chatMessages += $"[{timestamp}] <{bot.Username}>";
-            }
+            var messages = await GetTextMessages(arg, bot);
 
             var stopSequence = "\n[";
 
@@ -67,10 +32,10 @@ namespace CLRCompanion.Bot.Engines
             // string array of stop sequence and \n\n
             var stopSequences = new string[] { stopSequence, "\n\n" };
 
-            Console.WriteLine(chatMessages);
+            Console.WriteLine(messages);
 
             var response = await _api.Completions.CreateCompletionAsync(
-                prompt: chatMessages,
+                prompt: messages,
                 model: bot.Model,
                 stopSequences: stopSequences,
                 max_tokens: 1024

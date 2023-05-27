@@ -34,7 +34,7 @@ namespace CLRCompanion.Data
 
     public enum ModelType
     {
-        GPTText, GPTChat
+        GPTText, GPTChat, Endpoint
     }
 }
     

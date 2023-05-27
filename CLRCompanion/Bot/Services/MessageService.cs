@@ -150,6 +150,8 @@ namespace CLRCompanion.Bot.Services
                     return scope.ServiceProvider.GetRequiredService<GPTTextEngine>();
                 case ModelType.GPTChat:
                     return scope.ServiceProvider.GetRequiredService<GPTChatEngine>();
+                case ModelType.Endpoint:
+                    return scope.ServiceProvider.GetRequiredService<EndpointEngine>();
                 default:
                     throw new ArgumentException("Invalid type", "type");
             }
