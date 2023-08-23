@@ -121,5 +121,6 @@ else
         Logger.LogInformation("HandleSubmit called");
 
         dbContext.Bots.Update(bot!);
+        dbContext.SaveChanges();
     }
 }
