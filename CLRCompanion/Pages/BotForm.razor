@@ -1,0 +1,125 @@
+﻿@page "/bot"
+
+<PageTitle>Bot</PageTitle>
+
+@using CLRCompanion.Data
+@inject ApplicationDbContext dbContext
+@inject NavigationManager NavigationManager
+@using Microsoft.Extensions.Logging
+@inject ILogger<BotForm> Logger
+
+<h1>Editing Bot</h1>
+
+@if (bot == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="@bot" OnSubmit="@HandleSubmit">
+        <div class="form-group">
+            <label for="username">Username</label>
+            <InputText @bind-Value="bot.Username" class="form-control" id="username" placeholder="Enter email" />
+        </div>
+
+        <div class="form-group">
+            <label for="prompt">Prompt</label>
+            <InputTextArea @bind-Value="bot.Prompt" class="form-control" id="prompt" placeholder="Enter prompt" />
+        </div>
+
+        <div class="form-group">
+            <label for="model">Model</label>
+            <InputText @bind-Value="bot.Model" class="form-control" id="model" placeholder="Enter model" />
+            <small id="modelHelp" class="form-text text-muted">
+                The model to use for this bot. This will depend on the model type.
+                <ul>
+                    <li>For <code>GPTText</code>, this is an OpenAI text completion model name or finetune id.</li>
+                    <li>For <code>GPTChat</code>, this is a ChatGPT based model name or finetune id.</li>
+                    <li>For <code>Endpoint</code>, this is a URL to a custom endpoint.</li>
+                </ul>
+            </small>
+        </div>
+
+        <div class="form-group">
+            <label for="modelType">Model Type</label>
+            <InputSelect @bind-Value="bot.ModelType" class="form-control" id="modelType">
+                @foreach (var type in Enum.GetValues(typeof(ModelType)))
+                {
+                    <option value="@type">@type</option>
+                }
+            </InputSelect>
+        </div>
+
+        <div class="form-group">
+            <label for="chance">Chance</label>
+            <InputNumber @bind-Value="bot.Chance" class="form-control" id="chance" placeholder="Enter chance" />
+        </div>
+
+        <div class="form-group">
+            <label for="limit">Limit</label>
+            <InputNumber @bind-Value="bot.Limit" class="form-control" id="limit" placeholder="Enter limit" />
+        </div>
+
+
+        <div class="form-group">
+            <label for="avatarUrl">Avatar URL</label>
+            <InputText @bind-Value="bot.AvatarUrl" class="form-control" id="avatarUrl" placeholder="Enter avatar url" />
+        </div>
+
+        <div class="form-group">
+            <InputCheckbox @bind-Value="bot.Default" class="form-check-input" id="default" />
+
+            <label class="form-check-label" for="default">Default</label>
+        </div>
+
+        <div class="form-group">
+            <InputCheckbox @bind-Value="bot.IgnorePings" class="form-check-input" id="ignorePings" />
+
+            <label class="form-check-label" for="ignorePings">Ignore Pings</label>
+        </div>
+
+        <div class="form-group">
+            <label for="stopToken">Stop Token</label>
+            <InputText @bind-Value="bot.StopToken" class="form-control" id="stopToken" placeholder="Enter stop token" />
+        </div>
+
+        <div class="form-group">
+            <label for="promptSuffix">Prompt Suffix</label>
+            <InputText @bind-Value="bot.PromptSuffix" class="form-control" id="promptSuffix" placeholder="Enter prompt suffix" />
+        </div>
+
+        <div class="form-group">
+            <label for="messagePerUser">Message Per User</label>
+            <InputCheckbox @bind-Value="bot.MessagePerUser" class="form-check-input" id="messagePerUser" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </EditForm>
+}
+
+
+@code {
+    private Data.Bot? bot;
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "id")]
+    public string? Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id == null)
+        {
+            bot = new Data.Bot();
+        }
+
+        int id = int.Parse(Id!);
+        bot = dbContext.Bots.Where(b => b.Id == id).First();
+    }
+
+    private void HandleSubmit()
+    {
+        Logger.LogInformation("HandleSubmit called");
+
+        dbContext.Bots.Update(bot!);
+    }
+}

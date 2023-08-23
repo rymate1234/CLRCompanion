@@ -28,6 +28,7 @@ namespace CLRCompanion.Bot
                 .AddSingleton<InteractionHandlingService>()
                 .AddSingleton<MessageService>()
                 .AddSingleton<OpenAIAPI>()
+                .AddSingleton<OpenAIService>()
                 .AddSingleton<GPTChatEngine>()
                 .AddSingleton<GPTTextEngine>()
                 .AddSingleton<EndpointEngine>()

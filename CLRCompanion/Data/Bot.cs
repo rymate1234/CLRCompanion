@@ -9,6 +9,8 @@ namespace CLRCompanion.Data
         public ulong ChannelId { get; set; }
         public string Username { get; set; }
         public string Prompt { get; set; }
+        public OpenAIFunction? Primer { get; set; }
+        public OpenAIFunction? ResponseTemplate { get; set; }
         public string Model { get; set; }
         public ModelType ModelType { get; set; }
         public double Chance { get; set; }
@@ -18,6 +20,7 @@ namespace CLRCompanion.Data
         public bool IgnorePings { get; set; }
         public string? StopToken { get; set; }
         public string? PromptSuffix { get; set; }
+        public bool? MessagePerUser { get; set; }
 
         public string TruncatedPrompt
         {

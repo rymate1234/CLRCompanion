@@ -1,4 +1,6 @@
-﻿using CLRCompanion.Data;
+﻿using Azure.AI.OpenAI;
+using CLRCompanion.Bot.Services;
+using CLRCompanion.Data;
 using CLRCompanion.Pages;
 using Discord;
 using Discord.WebSocket;
@@ -11,11 +13,11 @@ namespace CLRCompanion.Bot.Engines
 {
     public class GPTTextEngine : TextEngine
     {
-        private readonly OpenAIAPI _api;
+        private readonly OpenAIService _api;
 
-        public GPTTextEngine(IServiceProvider services, OpenAIAPI api): base(services)
+        public GPTTextEngine(IServiceProvider services, OpenAIService api): base(services)
         {
-            _api = services.GetRequiredService<OpenAIAPI>();
+            _api = services.GetRequiredService<OpenAIService>();
         }
 
         public override async Task<string> GetResponse(SocketMessage arg, Data.Bot bot)
@@ -30,19 +32,20 @@ namespace CLRCompanion.Bot.Engines
             }
 
             // string array of stop sequence and \n\n
-            var stopSequences = new string[] { stopSequence, "\n\n" };
-
             Console.WriteLine(messages);
 
-            var response = await _api.Completions.CreateCompletionAsync(
-                prompt: messages,
-                model: bot.Model,
-                stopSequences: stopSequences,
-                max_tokens: 1024
+            var response = await _api.GetCompletionsAsync(
+                bot.Model,
+                new CompletionsOptions()
+                {
+                    Prompts = { messages },
+                    StopSequences = { stopSequence, "\n\n" },
+                    MaxTokens = 1024
+                }
             );
 
             // filter out any initial timestamp from the response
-            var msg = response.ToString();
+            var msg = response.Value.Choices[0].Text;
             var filteredMsg = msg.Contains("> ") ? msg.Substring(msg.IndexOf("> ") + 2) : msg;
 
             return filteredMsg ?? "";

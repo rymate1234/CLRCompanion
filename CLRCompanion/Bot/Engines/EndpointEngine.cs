@@ -42,8 +42,7 @@ namespace CLRCompanion.Bot.Engines
             var response = await client.PostAsync(bot.Model, content);
 
             // Get the response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var filteredMsg = responseContent.Contains("> ") ? responseContent.Substring(responseContent.IndexOf("> ") + 2) : responseContent;
+            var filteredMsg = await response.Content.ReadAsStringAsync();
 
             // end the filtered message at the first of the stop sequences
             if (filteredMsg.Contains(stopSequences[0]))
@@ -54,6 +53,8 @@ namespace CLRCompanion.Bot.Engines
             {
                 filteredMsg = filteredMsg.Substring(0, filteredMsg.IndexOf(stopSequences[1]));
             }
+
+            filteredMsg = filteredMsg.Contains("> ") ? filteredMsg.Substring(filteredMsg.IndexOf("> ") + 2) : filteredMsg;
 
             return filteredMsg ?? "";
         }
