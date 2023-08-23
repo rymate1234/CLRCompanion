@@ -20,7 +20,7 @@ namespace CLRCompanion.Data
         public bool IgnorePings { get; set; }
         public string? StopToken { get; set; }
         public string? PromptSuffix { get; set; }
-        public bool? MessagePerUser { get; set; }
+        public bool MessagePerUser { get; set; }
 
         public string TruncatedPrompt
         {
