@@ -23,6 +23,8 @@ The prompt is as follows:";
             _api = services.GetRequiredService<OpenAIService>();
         }
 
+        private Regex rgx = new Regex("[^a-zA-Z0-9_]");
+
         public void HandleCombinedMessages(IEnumerable<IMessage>? messages, List<ChatMessage> chatMessages, Data.Bot bot)
         {
             foreach (var message in messages)
@@ -71,7 +73,6 @@ The prompt is as follows:";
                 var messageText = bot.CanPingUsers ? message.Content : message.CleanContent;
                 // Username may contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
                 var username = message.Author.Username;
-                Regex rgx = new Regex("[^a-zA-Z0-9_]");
                 username = rgx.Replace(username, "");
 
                 foreach (var attachment in message.Attachments)
@@ -126,10 +127,24 @@ The prompt is as follows:";
                     }
 
                     var username = message.Author.Username;
-                    Regex rgx = new Regex("[^a-zA-Z0-9_]");
                     username = rgx.Replace(username, "");
 
-                    prompt += $"\n - {message.Author.Id} - {message.Author.Username} ({username})";
+                    if (!prompt.Contains(message.Author.Id.ToString()))
+                    {
+                        prompt += $"\n - {message.Author.Id} - {message.Author.Username} ({username})";
+                    }
+
+                    if (message is SocketUserMessage && ((SocketUserMessage)message).MentionedUsers.Count > 0)
+                    {
+                        foreach (var user in ((SocketUserMessage)message).MentionedUsers)
+                        {
+                            username = rgx.Replace(user.Username, "");
+                            if (!prompt.Contains(user.Id.ToString()))
+                            {
+                                prompt += $"\n - {user.Id} - {user.Username} ({username})";
+                            }
+                        }
+                    }
                 }
             }
 
