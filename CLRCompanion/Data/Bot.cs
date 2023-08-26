@@ -21,6 +21,8 @@ namespace CLRCompanion.Data
         public string? StopToken { get; set; }
         public string? PromptSuffix { get; set; }
         public bool MessagePerUser { get; set; }
+        public bool FineTuned { get; set; }
+        public bool CanPingUsers { get; set; }
 
         public string TruncatedPrompt
         {

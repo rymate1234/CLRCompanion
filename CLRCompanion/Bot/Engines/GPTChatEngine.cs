@@ -8,8 +8,7 @@ namespace CLRCompanion.Bot.Engines
 {
     public class GPTChatEngine : BaseEngine
     {
-        private string prompt = @"
-You are a discord bot designed to perform different prompts. The following will contain:
+        private string prompt = @"You are a discord bot designed to perform different prompts. The following will contain:
  - the prompt -- you should follow this as much as possible
  - at least one message from the channel, in the format [timestamp] <username>: message
  - If a message has embeds or attachments, they will be included in the prompt as well under the message as [embed] or [attachment]
@@ -34,7 +33,8 @@ The prompt is as follows:";
 
                 // format date as yyyy-MM-dd HH:mm:ss
                 var timestamp = message.Timestamp.DateTime.ToString("yyyy-MM-dd HH:mm:ss");
-                var messageText = isBot ? message.CleanContent : $"[{timestamp}] <{message.Author.Username}> {message.CleanContent}";
+                var content = bot.CanPingUsers ? message.Content : message.CleanContent;
+                var messageText = isBot ? content : $"[{timestamp}] <{message.Author.Username}> {content}";
 
                 foreach (var attachment in message.Attachments)
                 {
@@ -68,7 +68,7 @@ The prompt is as follows:";
                 var isBot = message.Author.Username == bot.Username && (message.Author.IsBot || message.Author.IsWebhook);
                 var role = isBot ? ChatRole.Assistant : ChatRole.User;
                 var lastMessage = chatMessages.LastOrDefault();
-                var messageText = message.CleanContent;
+                var messageText = bot.CanPingUsers ? message.Content : message.CleanContent;
                 // Username may contain a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
                 var username = message.Author.Username;
                 Regex rgx = new Regex("[^a-zA-Z0-9_]");
@@ -107,10 +107,33 @@ The prompt is as follows:";
 
             var chatMessages = new List<ChatMessage>();
 
-            if (bot.Prompt != "")
+            var prompt = bot.Prompt ?? "";
+
+            if (!bot.FineTuned) 
             {
-                chatMessages.Add(new ChatMessage(ChatRole.System, prompt + "\n\n" + bot.Prompt));
+                prompt = this.prompt + " " + bot.Prompt;
             }
+
+            if (bot.CanPingUsers)
+            {
+                prompt += "The following people are in this conversation:";
+                
+                foreach (var message in messages)
+                {
+                    if (message.Author.IsBot || message.Author.IsWebhook)
+                    {
+                        continue;
+                    }
+
+                    var username = message.Author.Username;
+                    Regex rgx = new Regex("[^a-zA-Z0-9_]");
+                    username = rgx.Replace(username, "");
+
+                    prompt += $"\n - {message.Author.Id} {message.Author.Username} {username}";
+                }
+            }
+
+            chatMessages.Add(new ChatMessage(ChatRole.System, prompt));
 
             if (bot.MessagePerUser == true)
             {
@@ -121,6 +144,10 @@ The prompt is as follows:";
                 HandleCombinedMessages(messages, chatMessages, bot);
             }
 
+            foreach (var message in chatMessages)
+            {
+                Console.WriteLine($"{message.Role} <{message.Name}> {message.Content}");
+            }
 
             if (bot.Primer != null)
             {

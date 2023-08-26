@@ -93,6 +93,16 @@ else
             <InputCheckbox @bind-Value="bot.MessagePerUser" class="form-check-input" id="messagePerUser" />
         </div>
 
+        <div class="form-group">
+            <label for="fineTuned">Fine Tuned</label>
+            <InputCheckbox @bind-Value="bot.FineTuned" class="form-check-input" id="fineTuned" />
+        </div>
+
+        <div class="form-group">
+            <label for="canPingUsers">Can Ping Users</label>
+            <InputCheckbox @bind-Value="bot.CanPingUsers" class="form-check-input" id="canPingUsers" />
+        </div>
+        
         <button type="submit" class="btn btn-primary">Submit</button>
     </EditForm>
 }
