@@ -129,7 +129,7 @@ The prompt is as follows:";
                     Regex rgx = new Regex("[^a-zA-Z0-9_]");
                     username = rgx.Replace(username, "");
 
-                    prompt += $"\n - {message.Author.Id} {message.Author.Username} {username}";
+                    prompt += $"\n - {message.Author.Id} - {message.Author.Username} ({username})";
                 }
             }
 
