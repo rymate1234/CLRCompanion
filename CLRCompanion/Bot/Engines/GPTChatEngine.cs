@@ -1,6 +1,8 @@
 ﻿using Azure.AI.OpenAI;
 using CLRCompanion.Bot.Services;
+using CLRCompanion.Data;
 using Discord;
+using Discord.Rest;
 using Discord.WebSocket;
 using System.Text.RegularExpressions;
 
@@ -110,7 +112,7 @@ The prompt is as follows:";
 
             var prompt = bot.Prompt ?? "";
 
-            if (!bot.FineTuned) 
+            if (!bot.FineTuned)
             {
                 prompt = this.prompt + " " + bot.Prompt;
             }
@@ -118,7 +120,7 @@ The prompt is as follows:";
             if (bot.CanPingUsers)
             {
                 prompt += "The following people are in this conversation:";
-                
+
                 foreach (var message in messages)
                 {
                     if (message.Author.IsBot || message.Author.IsWebhook)
@@ -132,6 +134,18 @@ The prompt is as follows:";
                     if (!prompt.Contains(message.Author.Id.ToString()))
                     {
                         prompt += $"\n - {message.Author.Id} - {message.Author.Username} ({username})";
+                    }
+
+                    if (message is RestUserMessage && ((RestUserMessage)message).MentionedUsers.Count > 0)
+                    {
+                        foreach (var user in ((RestUserMessage)message).MentionedUsers)
+                        {
+                            username = rgx.Replace(user.Username, "");
+                            if (!prompt.Contains(user.Id.ToString()))
+                            {
+                                prompt += $"\n - {user.Id} - {user.Username} ({username})";
+                            }
+                        }
                     }
 
                     if (message is SocketUserMessage && ((SocketUserMessage)message).MentionedUsers.Count > 0)

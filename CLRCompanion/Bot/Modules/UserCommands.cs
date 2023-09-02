@@ -15,7 +15,8 @@ namespace CLRCompanion.Bot.Modules
         [SlashCommand("preferences", "Edits your preferences.")]
         public async Task AddAsync
         (
-            UserMessagePreference userMessage = UserMessagePreference.All
+            UserMessagePreference userMessage = UserMessagePreference.All,
+            bool dontPing = false
         )
         {
             await RespondAsync("Editing preferences...", ephemeral: true);
@@ -29,13 +30,15 @@ namespace CLRCompanion.Bot.Modules
                 user = new UserPreferences
                 {
                     Id = userId,
-                    UserMessagePreference = userMessage
+                    UserMessagePreference = userMessage,
+                    DontPing = dontPing
                 };
                 DbContext.UserPreferences.Add(user);
             }
             else
             {
                 user.UserMessagePreference = userMessage;
+                user.DontPing = dontPing;
             }
             await DbContext.SaveChangesAsync();
 
@@ -58,6 +61,7 @@ namespace CLRCompanion.Bot.Modules
             var embed = new EmbedBuilder();
             embed.WithTitle($"@{Context.User.Username} (`{userId}`)");
             embed.AddField("What messages can the bot see?", user.UserMessagePreference);
+            embed.AddField("Should the bot ping you?", user.DontPing ? "No" : "Yes");
             await RespondAsync(embed: embed.Build(), ephemeral: true);
         }
     }

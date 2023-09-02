@@ -4,6 +4,7 @@
     {
         public ulong Id { get; set; }
         public UserMessagePreference UserMessagePreference { get; set; }
+        public bool DontPing { get; set; }
     }
 
     public enum UserMessagePreference 

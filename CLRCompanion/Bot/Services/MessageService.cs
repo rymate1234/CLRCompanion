@@ -5,6 +5,7 @@ using Discord.Webhook;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Text.RegularExpressions;
 
 namespace CLRCompanion.Bot.Services
 {
@@ -95,6 +96,48 @@ namespace CLRCompanion.Bot.Services
             await HandleReply(arg, bot);
         }
 
+        // Get users who have requested not to be pinged and replace pings with text
+        private async Task<string> FilterPings(string message)
+        {
+            // regex for discord user pings e.g. <@!123456789> or <@123456789>
+            var regex = new Regex(@"<@!?(\d+)>");
+
+            // get all matches
+            var matches = regex.Matches(message);
+
+            // if there are no matches, return
+            if (matches.Count == 0)
+            {
+                return message;
+            }
+
+            // for each match, check if the user has requested not to be pinged
+            using (var scope = _services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                
+                foreach (var match in matches)
+                {
+                    // get the user id from the match
+                    var userId = ulong.Parse(match.ToString().Replace("<@!", "").Replace("<@", "").Replace(">", ""));
+                    // get the user from the database
+                    var user = await dbContext.UserPreferences.FirstOrDefaultAsync(u => u.Id == userId);
+                    // if the user has requested not to be pinged, replace the ping with their username
+                    if (user != null && user.DontPing)
+                    {
+                        // get user from discord
+                        var discordUser = await _discord.GetUserAsync(userId);
+                        if (discordUser != null)
+                        {
+                            message = message.Replace(match.ToString(), $"@{discordUser.Username}");
+                        }
+                    }
+                }
+            }
+
+            return message;
+        }
+
         private Data.Bot? HandleChance(SocketMessage arg, List<Data.Bot> bots)
         {
             // randomise the array first
@@ -167,6 +210,8 @@ namespace CLRCompanion.Bot.Services
             var engine = GetEngine(bot.ModelType);
 
             var filteredMsg = await engine.GetResponse(arg, bot);
+
+            filteredMsg = await FilterPings(filteredMsg);
 
             var channel = arg.Channel as IIntegrationChannel;
 
