@@ -143,7 +143,12 @@ The prompt is as follows:";
                             username = rgx.Replace(user.Username, "");
                             if (!prompt.Contains(user.Id.ToString()))
                             {
-                                prompt += $"\n - {user.Id} - {user.Username} ({username})";
+                                prompt += $"\n - <@{user.Id}> {user.Username}";
+
+                                if (!bot.FineTuned)
+                                {
+                                    prompt += $" ({username})";
+                                }
                             }
                         }
                     }
@@ -155,7 +160,12 @@ The prompt is as follows:";
                             username = rgx.Replace(user.Username, "");
                             if (!prompt.Contains(user.Id.ToString()))
                             {
-                                prompt += $"\n - {user.Id} - {user.Username} ({username})";
+                                prompt += $"\n - <@{user.Id}> {user.Username}";
+
+                                if (!bot.FineTuned)
+                                {
+                                    prompt += $" ({username})";
+                                }
                             }
                         }
                     }
