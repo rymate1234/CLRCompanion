@@ -38,7 +38,7 @@ The prompt is as follows:";
                 // format date as yyyy-MM-dd HH:mm:ss
                 var timestamp = message.Timestamp.DateTime.ToString("yyyy-MM-dd HH:mm:ss");
                 var content = bot.CanPingUsers ? message.Content : message.CleanContent;
-                var messageText = isBot ? content : $"[{timestamp}] <{message.Author.Username}> {content}";
+                var messageText = isBot ? content : $"[{timestamp}] {message.Author.Username}: {content}";
 
                 foreach (var attachment in message.Attachments)
                 {
@@ -174,6 +174,11 @@ The prompt is as follows:";
                             }
                         }
                     }
+                }
+
+                if (!bot.FineTuned)
+                {
+                    prompt += "\nUse the <@id> to ping them in the chat. Include the angle brackets, and the ID must be numerical.";
                 }
             }
 

@@ -213,6 +213,8 @@ namespace CLRCompanion.Bot.Services
 
             filteredMsg = await FilterPings(filteredMsg);
 
+            Console.WriteLine(filteredMsg);
+
             var channel = arg.Channel as IIntegrationChannel;
 
             if (channel != null)
