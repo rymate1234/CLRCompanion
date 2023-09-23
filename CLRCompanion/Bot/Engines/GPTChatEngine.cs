@@ -133,7 +133,12 @@ The prompt is as follows:";
 
                     if (!prompt.Contains(message.Author.Id.ToString()))
                     {
-                        prompt += $"\n - {message.Author.Id} - {message.Author.Username} ({username})";
+                        prompt += $"\n - <@{message.Author.Id}> {message.Author.Username}";
+                        
+                        if (!bot.FineTuned)
+                        {
+                            prompt += $" ({username})";
+                        }
                     }
 
                     if (message is RestUserMessage && ((RestUserMessage)message).MentionedUsers.Count > 0)
