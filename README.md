@@ -2,6 +2,8 @@
 
 A discord bot to put OpenAIs in your Discord server, written in .NET 7
 
+This repo is no longer being maintained: https://github.com/rymate1234/ts-talker is the place to go for a spiritual sequel
+
 It can simulate being multiple bots at once with Discord webhooks, and can be configured to use different models for each bot.
 
 There is also an unfinished web UI to manage the bots.
